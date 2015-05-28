@@ -4,6 +4,7 @@
 
 /*-------------------------------------------------------------*/
 /*			Class implementation			*/
+
 /*-------------------------------------------------------------*/
 
 RTCLib::RTCLib()
@@ -19,7 +20,7 @@ time_t RTCLib::get()
 	if (read(dt) == false)
 		return 0;
 	// Convert to timestamp
-	return(time_make(&dt));
+	return time_make(&dt);
 }
 
 bool RTCLib::set(time_t t)
@@ -37,6 +38,7 @@ bool RTCLib::set(time_t t)
 bool RTCLib::read(struct tm &dt)
 {
 	uint8_t sec;
+
 	Wire.beginTransmission(DS1307_ID);
 #if ARDUINO >= 100  
 	Wire.write((uint8_t) 0x00);
@@ -49,9 +51,11 @@ bool RTCLib::read(struct tm &dt)
 	}
 	exists = true;
 
-	// request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
+	// request the 7 data fields
+	// secs, min, hr, dow, date, mth, yr
 	Wire.requestFrom(DS1307_ID, 7);
-	if (Wire.available() < 7) return false;
+	if (Wire.available() < 7)
+		return false;
 #if ARDUINO >= 100
 	sec = Wire.read();
 	dt.tm_sec = bcd2dec(sec & 0x7f);
@@ -71,27 +75,31 @@ bool RTCLib::read(struct tm &dt)
 	dt.tm_mon = bcd2dec(Wire.receive());
 	dt.tm_year = time_y2k2tm((bcd2dec(Wire.receive())));
 #endif
-	if (sec & 0x80) return false; // clock is halted
+	// If clock is halted, return false
+	if (sec & 0x80)
+		return false;
 	return true;
 }
 
 bool RTCLib::write(struct tm &dt)
 {
 	Wire.beginTransmission(DS1307_ID);
-#if ARDUINO >= 100  
-	Wire.write((uint8_t) 0x00); // reset register pointer
+#if ARDUINO >= 100
+	// reset register pointer
+	Wire.write((uint8_t) 0x00);
 	Wire.write(dec2bcd(dt.tm_sec));
 	Wire.write(dec2bcd(dt.tm_min));
-	Wire.write(dec2bcd(dt.tm_hour)); // sets 24 hour format
+	Wire.write(dec2bcd(dt.tm_hour));
 	Wire.write(dec2bcd(dt.tm_wday));
 	Wire.write(dec2bcd(dt.tm_mday));
 	Wire.write(dec2bcd(dt.tm_mon));
 	Wire.write(dec2bcd(time_tm2y2k(dt.tm_year)));
-#else  
-	Wire.send(0x00); // reset register pointer
+#else
+	// reset register pointer
+	Wire.send(0x00);
 	Wire.send(dec2bcd(dt.tm_sec));
 	Wire.send(dec2bcd(dt.tm_min));
-	Wire.send(dec2bcd(dt.tm_hour)); // sets 24 hour format
+	Wire.send(dec2bcd(dt.tm_hour));
 	Wire.send(dec2bcd(dt.tm_wday));
 	Wire.send(dec2bcd(dt.tm_mday));
 	Wire.send(dec2bcd(dt.tm_mon));
@@ -105,8 +113,70 @@ bool RTCLib::write(struct tm &dt)
 	return true;
 }
 
+bool RTCLib::write_nvram(uint16_t addr, uint8_t * src, uint16_t size)
+{
+	uint16_t i;
+
+	// Limit operation to valid range
+	// Wire library cannot transfer more than 32 bytes at a time
+	if(size >= 32 || addr + size > 56)
+		return false;
+
+	Wire.beginTransmission(DS1307_ID);
+#if ARDUINO >= 100
+	// Write start address for NVRAM
+	Wire.write((uint8_t) (0x08 + addr));
+	for (i = 0; i < size; i++) {
+		Wire.write(src[i]);
+	}
+#else
+	// Write start address for NVRAM
+	Wire.send((uint8_t) (0x08 + addr));
+	for (i = 0; i < size; i++) {
+		Wire.send(src[i]);
+	}
+#endif
+	if (Wire.endTransmission() != 0)
+		return false;
+	return true;
+}
+
+bool read_nvram(uint16_t addr, uint8_t * dst, uint16_t size)
+{
+	uint16_t i;
+
+		// Wire library cannot transfer more than 32 bytes at a time
+	if (size >= 32 || addr + size > 56)
+		return false;
+
+	Wire.beginTransmission(DS1307_ID);
+		// Add address offset for NVRAM start
+#if ARDUINO >= 100
+	Wire.write((uint8_t) (0x08 + addr));
+#else
+	Wire.send((uint8_t) (0x08 + addr));
+#endif
+	if (Wire.endTransmission() != 0)
+		return false;
+
+	Wire.requestFrom(DS1307_ID, size);
+	if (Wire.available() < size)
+		return false;
+
+	for (i = 0; i < size; i++) {
+#if ARDUINO >= 100
+		dst[i] = Wire.read();
+#else
+
+		dst[i] = Wire.receive();
+#endif
+	}
+	return true;
+}
+
 uint8_t RTCLib::dec2bcd(uint8_t num)
 {
+
 	return((num / 10 * 16) + (num % 10));
 }
 
@@ -117,5 +187,5 @@ uint8_t RTCLib::bcd2dec(uint8_t num)
 
 bool RTCLib::exists = false;
 
-RTCLib RTC = RTCLib(); // create an instance for the user
+	RTCLib RTC = RTCLib(); // create an instance for the user
 

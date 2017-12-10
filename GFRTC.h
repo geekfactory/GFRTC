@@ -1,24 +1,25 @@
-/*	Arduino Library for DS1307 and similar Real Time Clock ICs
-	Copyright (C) 2015 Jesus Ruben Santa Anna Zamudio.
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	Author website: http://www.geekfactory.mx
-	Author e-mail: ruben at geekfactory dot mx
+/* GeekFactory GFRTC Library for Arduino
+ * 
+ * Copyright (C) 2017 Jesus Ruben Santa Anna Zamudio.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Author website: https://www.geekfactory.mx
+ * Author e-mail: ruben at geekfactory dot mx
  */
-#ifndef RTCLIB_h
-#define RTCLIB_h
+
+#ifndef GFRTC_h
+#define GFRTC_h
 
 /*-------------------------------------------------------------*/
 /*		Includes and dependencies			*/
@@ -27,16 +28,18 @@
 #include <TimeLib.h>
 
 /*-------------------------------------------------------------*/
+/*		Library configuration				*/
+/*-------------------------------------------------------------*/
+#define GFRTC_VERSION_STRING     "1.0.0"
+#define GFRTC_I2C_ADDRESS        0x68
+
+/*-------------------------------------------------------------*/
 /*			Class declaration			*/
 /*-------------------------------------------------------------*/
-
-class RTCLib {
+class GFRTC {
 public:
-	/**
-	 * Class constructor
-	 */
-	RTCLib();
-
+	GFRTC();
+	
 	/**
 	 * Reads the RTC time/date registers and converts the value to a unix timestamp
 	 *
@@ -95,7 +98,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise
 	 */
-	static bool write_nvram(uint16_t addr, uint8_t * src, uint16_t size);
+	static bool writeNVRAM(uint16_t addr, const void * src, uint16_t size);
 
 	/**
 	 * Read from RTC chip general purpose NVRAM
@@ -106,7 +109,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise
 	 */
-	static bool read_nvram(uint16_t addr, uint8_t * dst, uint16_t size);
+	static bool readNVRAM(uint16_t addr, void * dst, uint16_t size);
 
 	/**
 	 * Returns true if chip is present on I2C bus
@@ -126,7 +129,7 @@ private:
 #undef RTC //workaround for Arduino Due
 #endif
 
-extern RTCLib RTC;
+extern GFRTC RTC;
 
 #endif
 // End of Header file

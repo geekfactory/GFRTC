@@ -90,26 +90,26 @@ public:
 	static bool write(struct tm &dt);
 
 	/**
-	 * Write to RTC chip general purpose NVRAM
+	 * Writes general purpose NVRAM on the RTC chip
 	 *
-	 * @param addr The address to write to
-	 * @param src Pointer to buffer containing data to write
-	 * @param size Size of the data to write
-	 *
-	 * @return Returns true if communication is successfull, false otherwise
-	 */
-	static bool writeNVRAM(uint16_t addr, const void * src, uint16_t size);
-
-	/**
-	 * Read from RTC chip general purpose NVRAM
-	 *
-	 * @param addr The address to read from
-	 * @param dst Pointer to buffer to put data comming from RTC
+	 * @param address The address to write to
+	 * @param buffer Pointer to buffer containing data to write on NVRAM
 	 * @param size Size of the data to transfer
 	 *
 	 * @return Returns true if communication is successfull, false otherwise
 	 */
-	static bool readNVRAM(uint16_t addr, void * dst, uint16_t size);
+	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
+
+	/**
+	 * Reads from general purpose NVRAM on the RTC chip
+	 *
+	 * @param address The address to read from
+	 * @param buffer Pointer where data from NVRAM should be stored
+	 * @param size Size of the data to transfer
+	 *
+	 * @return Returns true if communication is successfull, false otherwise
+	 */
+	static bool readNVRAM(uint16_t address, void * buffer, uint16_t size);
 
 	/**
 	 * Returns true if chip is present on I2C bus
@@ -129,7 +129,7 @@ private:
 #undef RTC //workaround for Arduino Due
 #endif
 
-extern GFRTC RTC;
+extern GFRTC GFRTC;
 
 #endif
 // End of Header file

@@ -20,9 +20,9 @@
 
 #include "GFRTC.h"
 
-/*-------------------------------------------------------------*/
-/*		Class implementation				*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Class implementation				*
+ *-------------------------------------------------------------*/
 GFRTC::GFRTC()
 {
 	// Prepare I2C
@@ -109,11 +109,11 @@ bool GFRTC::write(struct tm &dt)
 bool GFRTC::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 {
 	uint16_t i;
-	const uint8_t * src = (uint8_t *)buffer;
+	const uint8_t * src = (uint8_t *) buffer;
 
 	// Limit operation to valid range
 	// Wire library cannot transfer more than 32 bytes at a time
-	if (size >= 32 || address + size > 56)
+	if (size > 32 || address + size >= 64)
 		return false;
 
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
@@ -123,6 +123,7 @@ bool GFRTC::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 	for (i = 0; i < size; i++) {
 		Wire.write(src[i]);
 	}
+	// Check if communication was successful
 	if (Wire.endTransmission() != 0)
 		return false;
 	return true;
@@ -131,23 +132,23 @@ bool GFRTC::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 bool GFRTC::readNVRAM(uint16_t address, void * buffer, uint16_t size)
 {
 	uint16_t i;
-	uint8_t * dst = (uint8_t *)buffer;
+	uint8_t * dst = (uint8_t *) buffer;
 
+	// Limit operation to valid range
 	// Wire library cannot transfer more than 32 bytes at a time
-	if (size >= 32 || address + size > 56)
+	if (size > 32 || address + size >= 64)
 		return false;
 
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
 	// Add address offset for NVRAM start
 	Wire.write((uint8_t) (0x08 + address));
-
 	if (Wire.endTransmission() != 0)
 		return false;
-
+	// Begin read operation
 	Wire.requestFrom(GFRTC_I2C_ADDRESS, size);
 	if ((uint16_t) (Wire.available()) < size)
 		return false;
-
+	// Read data to buffer
 	for (i = 0; i < size; i++) {
 		dst[i] = Wire.read();
 	}
@@ -167,4 +168,3 @@ uint8_t GFRTC::bcd2dec(uint8_t num)
 bool GFRTC::exists = false;
 
 GFRTC RTC = GFRTC(); // create an instance for the user
-

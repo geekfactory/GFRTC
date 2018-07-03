@@ -21,25 +21,25 @@
 #ifndef GFRTC_h
 #define GFRTC_h
 
-/*-------------------------------------------------------------*/
-/*		Includes and dependencies			*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Includes and dependencies			*
+ *-------------------------------------------------------------*/
 #include <Wire.h>
 #include <TimeLib.h>
 
-/*-------------------------------------------------------------*/
-/*		Library configuration				*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Library configuration				*
+ *-------------------------------------------------------------*/
 #define GFRTC_VERSION_STRING     "1.0.0"
 #define GFRTC_I2C_ADDRESS        0x68
 
-/*-------------------------------------------------------------*/
-/*			Class declaration			*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Class declaration				*
+ *-------------------------------------------------------------*/
 class GFRTC {
 public:
 	GFRTC();
-	
+
 	/**
 	 * Reads the RTC time/date registers and converts the value to a unix timestamp
 	 *
@@ -129,7 +129,7 @@ private:
 #undef RTC //workaround for Arduino Due
 #endif
 
-extern GFRTC GFRTC;
+extern GFRTC RTC;
 
 #endif
 // End of Header file

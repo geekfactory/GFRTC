@@ -33,7 +33,7 @@
 /**
  * Version string, should be changed in every release
  */
-#define GFRTC_VERSION_STRING     "1.1.0"
+#define GFRTC_VERSION_STRING     "2.0.0"
 
 /**
  * I2C address of the RTC chip

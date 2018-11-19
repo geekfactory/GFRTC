@@ -1,44 +1,51 @@
-/* GeekFactory GFRTC Library for Arduino
- * 
- * Copyright (C) 2017 Jesus Ruben Santa Anna Zamudio.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Author website: https://www.geekfactory.mx
- * Author e-mail: ruben at geekfactory dot mx
- */
+/*	Geek Factory GFRTC Library
+	Copyright (C) 2018 Jesus Ruben Santa Anna Zamudio.
 
-#ifndef GFRTC_h
-#define GFRTC_h
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	Author website: https://www.geekfactory.mx
+	Author e-mail: ruben at geekfactory dot mx
+ */
+#ifndef GFRTC_H
+#define GFRTC_H
 
 /*-------------------------------------------------------------*
  *		Includes and dependencies			*
  *-------------------------------------------------------------*/
 #include <Wire.h>
-#include <TimeLib.h>
+#include "TimeLib.h"
 
 /*-------------------------------------------------------------*
  *		Library configuration				*
  *-------------------------------------------------------------*/
-#define GFRTC_VERSION_STRING     "1.0.0"
+
+/**
+ * Version string, should be changed in every release
+ */
+#define GFRTC_VERSION_STRING     "1.1.0"
+
+/**
+ * I2C address of the RTC chip
+ */
 #define GFRTC_I2C_ADDRESS        0x68
 
 /*-------------------------------------------------------------*
  *		Class declaration				*
  *-------------------------------------------------------------*/
-class GFRTC {
+class GFRTCClass {
 public:
-	GFRTC();
+	GFRTCClass();
 
 	/**
 	 * Reads the RTC time/date registers and converts the value to a unix timestamp
@@ -50,7 +57,7 @@ public:
 	 * @return A Unix timestamp representing the number of seconds elapsed since
 	 * 00:00 hours, Jan 1, 1970 UTC to the present date.
 	 */
-	static time_t get();
+	static timelib_t get();
 
 	/**
 	 * Writes the RTC time/date registers with the value provided as unix timestamp
@@ -63,7 +70,7 @@ public:
 	 *
 	 * @return Return true if successfully written data to RTC chip
 	 */
-	static bool set(time_t t);
+	static bool set(timelib_t t);
 
 	/**
 	 * Read the RTC time/date registers to structure
@@ -75,7 +82,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise
 	 */
-	static bool read(struct tm &dt);
+	static bool read(struct timelib_tm &dt);
 
 	/**
 	 * Write the RTC time/date registers from structure
@@ -87,7 +94,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise
 	 */
-	static bool write(struct tm &dt);
+	static bool write(struct timelib_tm &dt);
 
 	/**
 	 * Writes general purpose NVRAM on the RTC chip
@@ -125,11 +132,8 @@ private:
 	static uint8_t bcd2dec(uint8_t num);
 };
 
-#ifdef RTC
-#undef RTC //workaround for Arduino Due
-#endif
 
-extern GFRTC RTC;
+extern GFRTCClass GFRTC;
 
 #endif
 // End of Header file

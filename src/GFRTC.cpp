@@ -1,37 +1,36 @@
-/* GeekFactory GFRTC Library for Arduino
- * 
- * Copyright (C) 2017 Jesus Ruben Santa Anna Zamudio.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * Author website: https://www.geekfactory.mx
- * Author e-mail: ruben at geekfactory dot mx
- */
+/*	Geek Factory GFRTC Library
+	Copyright (C) 2018 Jesus Ruben Santa Anna Zamudio.
 
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	Author website: https://www.geekfactory.mx
+	Author e-mail: ruben at geekfactory dot mx
+ */
 #include "GFRTC.h"
 
 /*-------------------------------------------------------------*
  *		Class implementation				*
  *-------------------------------------------------------------*/
-GFRTC::GFRTC()
+GFRTCClass::GFRTCClass()
 {
-	// Prepare I2C
-	Wire.begin();
+	// Prepare I2C (moved this call out of the constructor)
+	//Wire.begin();
 }
 
-time_t GFRTC::get()
+timelib_t GFRTCClass::get()
 {
-	struct tm dt;
+	struct timelib_tm dt;
 	// Read information from RTC to structure
 	if (read(dt) == false)
 		return 0;
@@ -39,9 +38,9 @@ time_t GFRTC::get()
 	return time_make(&dt);
 }
 
-bool GFRTC::set(time_t t)
+bool GFRTCClass::set(timelib_t t)
 {
-	struct tm dt;
+	struct timelib_tm dt;
 	// Get human readable time information
 	time_break(t, &dt);
 	// Write information on struct to hardware clock
@@ -55,7 +54,7 @@ bool GFRTC::set(time_t t)
 		return true;
 }
 
-bool GFRTC::read(struct tm &dt)
+bool GFRTCClass::read(struct timelib_tm &dt)
 {
 	uint8_t sec;
 
@@ -85,7 +84,7 @@ bool GFRTC::read(struct tm &dt)
 	return true;
 }
 
-bool GFRTC::write(struct tm &dt)
+bool GFRTCClass::write(struct timelib_tm &dt)
 {
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
 	// reset register pointer
@@ -106,7 +105,7 @@ bool GFRTC::write(struct tm &dt)
 	return true;
 }
 
-bool GFRTC::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
+bool GFRTCClass::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 {
 	uint16_t i;
 	const uint8_t * src = (uint8_t *) buffer;
@@ -129,7 +128,7 @@ bool GFRTC::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 	return true;
 }
 
-bool GFRTC::readNVRAM(uint16_t address, void * buffer, uint16_t size)
+bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
 {
 	uint16_t i;
 	uint8_t * dst = (uint8_t *) buffer;
@@ -155,16 +154,16 @@ bool GFRTC::readNVRAM(uint16_t address, void * buffer, uint16_t size)
 	return true;
 }
 
-uint8_t GFRTC::dec2bcd(uint8_t num)
+uint8_t GFRTCClass::dec2bcd(uint8_t num)
 {
 	return((num / 10 * 16) + (num % 10));
 }
 
-uint8_t GFRTC::bcd2dec(uint8_t num)
+uint8_t GFRTCClass::bcd2dec(uint8_t num)
 {
 	return((num / 16 * 10) + (num % 16));
 }
 
-bool GFRTC::exists = false;
+bool GFRTCClass::exists = false;
 
-GFRTC RTC = GFRTC(); // create an instance for the user
+GFRTCClass GFRTC = GFRTCClass(); // create an instance for the user

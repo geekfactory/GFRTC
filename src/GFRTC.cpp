@@ -24,34 +24,55 @@
  *-------------------------------------------------------------*/
 GFRTCClass::GFRTCClass()
 {
-	// Prepare I2C (moved this call out of the constructor)
+	// Prepare I2C (moved this call out of the constructor) as it causes problems in some architectures
 	//Wire.begin();
+}
+
+bool GFRTCClass::begin(bool begini2c)
+{
+	// Request to initialize I2C?
+	if (begini2c) {
+		Wire.begin();
+	}
+	// check for presence
+	get();
+
+	return exists;
 }
 
 timelib_t GFRTCClass::get()
 {
 	struct timelib_tm dt;
-	// Read information from RTC to structure
-	if (read(dt) == false)
+	
+	// read information from RTC to structure
+	if (read(dt) == false) {
+		// return 0 if cannot communicate with RTC
 		return 0;
-	// Convert to timestamp
+	}
+	
+	// convert to timestamp
 	return time_make(&dt);
 }
 
 bool GFRTCClass::set(timelib_t t)
 {
 	struct timelib_tm dt;
-	// Get human readable time information
+	
+	// get human readable time information (as required by RTC chip)
 	time_break(t, &dt);
-	// Write information on struct to hardware clock
+	
+	// enable CH bit for DS1307 chip
 	dt.tm_sec |= 0x80;
+	// write information on struct to hardware clock
 	if (!write(dt))
 		return false;
+	// disable CH bit on DS1307
 	dt.tm_sec &= 0x7f;
 	if (!write(dt))
 		return false;
-	else
-		return true;
+
+	// return true if communication was successful
+	return true;
 }
 
 bool GFRTCClass::read(struct timelib_tm &dt)
@@ -65,11 +86,13 @@ bool GFRTCClass::read(struct timelib_tm &dt)
 		return false;
 	}
 	exists = true;
+	
 	// request the 7 data fields secs, min, hr, dow, date, mth, yr
 	Wire.requestFrom(GFRTC_I2C_ADDRESS, 7);
 	if (Wire.available() < 7)
 		return false;
-	// Read result and convert from BCD
+	
+	// read result and convert from BCD
 	sec = Wire.read();
 	dt.tm_sec = bcd2dec(sec & 0x7f);
 	dt.tm_min = bcd2dec(Wire.read());

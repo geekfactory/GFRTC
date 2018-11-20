@@ -46,6 +46,17 @@
 class GFRTCClass {
 public:
 	GFRTCClass();
+	
+	/**
+	 * Prepares the GFRTC library for use, if parameter is set to true, also
+	 * initializes the underying I2C interface.
+	 * 
+         * @param begini2c Parameter that indicates if we want to intialize the Wire
+	 * library on this call (calls Wire.begin() if set to true).
+	 * 
+         * @return Returns true if communication with I2C RTC is successfull.
+         */
+	static bool begin(bool begini2c);
 
 	/**
 	 * Reads the RTC time/date registers and converts the value to a unix timestamp

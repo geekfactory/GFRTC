@@ -24,7 +24,7 @@
  *		Includes and dependencies			*
  *-------------------------------------------------------------*/
 #include <Wire.h>
-#include "TimeLib.h"
+#include <TimeLib.h>
 
 /*-------------------------------------------------------------*
  *		Library configuration				*
@@ -33,17 +33,84 @@
 /**
  * Version string, should be changed in every release
  */
-#define GFRTC_VERSION_STRING     "2.0.0"
-
-/**
- * I2C address of the RTC chip
- */
-#define GFRTC_I2C_ADDRESS        0x68
+#define GFRTC_VERSION_STRING	"2.0.0"
 
 /*-------------------------------------------------------------*
  *		Macros and definitions				*
  *-------------------------------------------------------------*/
 
+/**
+ * I2C address of the RTC chip
+ */
+#define GFRTC_I2C_ADDRESS	0x68
+
+/**
+ * registers addresses
+ */
+#define RTC_SECONDS 0x00
+#define RTC_MINUTES 0x01
+#define RTC_HOURS 0x02
+#define RTC_DAY 0x03
+#define RTC_DATE 0x04
+#define RTC_MONTH 0x05
+#define RTC_YEAR 0x06
+#define ALM1_SECONDS 0x07
+#define ALM1_MINUTES 0x08
+#define ALM1_HOURS 0x09
+#define ALM1_DAYDATE 0x0A
+#define ALM2_MINUTES 0x0B
+#define ALM2_HOURS 0x0C
+#define ALM2_DAYDATE 0x0D
+#define RTC_CONTROL 0x0E
+#define RTC_STATUS 0x0F
+#define RTC_AGING 0x10
+#define RTC_TEMP_MSB 0x11
+#define RTC_TEMP_LSB 0x12
+#define SRAM_START_ADDR 0x14
+#define SRAM_SIZE 236
+
+/**
+ * alarm bits
+ */
+#define A1M1 7
+#define A1M2 7
+#define A1M3 7
+#define A1M4 7
+#define A2M2 7
+#define A2M3 7
+#define A2M4 7
+
+/**
+ * control register bits
+ */
+#define EOSC 7
+#define BBSQW 6
+#define CONV 5
+#define RS2 4
+#define RS1 3
+#define INTCN 2
+#define A2IE 1
+#define A1IE 0
+
+/**
+ * status register bits
+ */
+#define OSF 7
+#define BB32KHZ 6
+#define CRATE1 5
+#define CRATE0 4
+#define EN32KHZ 3
+#define BSY 2
+#define A2F 1
+#define A1F 0
+
+/**
+ * other bit definitions
+ */
+#define DS1307_CH 7
+#define HR1224 6
+#define CENTURY 7
+#define DYDT 6
 
 /*-------------------------------------------------------------*
  *		Typedefs enums & structs			*
@@ -81,9 +148,8 @@ enum gfrtc_wave_frequencies {
  * Defines the available alarms available on the RTC
  */
 enum gfrtc_alarms {
-	NONE,
-	ALARM_1,
-	ALARM_2
+	E_ALARM_1,
+	E_ALARM_2
 };
 
 /*-------------------------------------------------------------*
@@ -157,16 +223,49 @@ public:
 	static bool write(struct timelib_tm &dt);
 
 	/**
-	 * Writes general purpose NVRAM on the RTC chip. This only works on RTC chips
-	 * that have built-in NVRAM.
-	 *
-	 * @param address The address to write to.
-	 * @param buffer Pointer to buffer containing data to write on NVRAM.
-	 * @param size Size of the data to transfer.
-	 *
+	 * Reads a register on the indicated address.
+	 * 
+	 * @param addr The address of the register to read.
+	 * @param result Optional pointer to bool variable where the result of the
+	 * operation is stored, the method writes true of operation successful.
+	 * 
+	 * @return Returns the value of the indicated register.
+	 */
+	static uint8_t readRegister(uint8_t addr, bool * result = NULL);
+
+	/**
+	 * Reads multiple registers starting at the indicated address storing the
+	 * received data on the indicated buffer.
+	 * 
+	 * @param addr The address of the first register to read.
+	 * @param data Pointer to memory where recevied data will be stored.
+	 * @param size The number of bytes to read.
+	 * 
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
-	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
+	static bool readRegister(uint8_t addr, void * data, uint8_t size);
+
+	/**
+	 * Writes a register on the indicated address with the given value.
+	 * 
+	 * @param addr The address of the register to write.
+	 * @param value The value to write on the register.
+	 * 
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool writeRegister(uint8_t addr, uint8_t value);
+
+	/**
+	 * Writes multiple registers starting at the indicated address with the
+	 * given data.
+	 * 
+	 * @param addr The address of the first register to write.
+	 * @param data Pointer to data that will be written to registers.
+	 * @param size The number of bytes to write.
+	 * 
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool writeRegister(uint8_t addr, const void * data, uint8_t size);
 
 	/**
 	 * Reads from general purpose NVRAM on the RTC chip. This only works on RTC chips
@@ -179,6 +278,18 @@ public:
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
 	static bool readNVRAM(uint16_t address, void * buffer, uint16_t size);
+
+	/**
+	 * Writes general purpose NVRAM on the RTC chip. This only works on RTC chips
+	 * that have built-in NVRAM.
+	 *
+	 * @param address The address to write to.
+	 * @param buffer Pointer to buffer containing data to write on NVRAM.
+	 * @param size Size of the data to transfer.
+	 *
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
 
 	/**
 	 * Configures an alarm on the RTC, this method writes to the Alarm 1 or Alarm 2
@@ -212,7 +323,7 @@ public:
 	 * 
 	 * @return The number of the alarm that requested an interrupt.
 	 */
-	static enum gfrtc_alarms getAlarmInterrupt();
+	static bool getAlarmInterruptFlag(enum gfrtc_alarms alarm);
 
 	/**
 	 * Enables the square wave output on the RTC.
@@ -234,7 +345,7 @@ public:
 	 * @return Returns true if oscillator stopped at some time, false if oscillator
 	 * operation is normal.
 	 */
-	bool getOscStoppedFlag(bool clearosf = false);
+	static bool getOscStoppedFlag(bool clearosf = false);
 
 	/**
 	 * Reads the RTC´s internal temperature sensor.
@@ -250,15 +361,28 @@ public:
 	 * chip. If the chip doesn´t responds or is not connected this will return
 	 * false.
 	 */
-	static bool chipIsPresent();
+	static bool isPresent();
 
 private:
-	static bool exists;
+	/**
+	 * This variable is set to true when the communication is successful.
+	 */
+	static bool _isPresent;
+
+	/**
+	 * Used internally to convert from binary to BCD.
+	 */
 	static uint8_t dec2bcd(uint8_t num);
+
+	/**
+	 * Used internally to convert from BCD to binary.
+	 */
 	static uint8_t bcd2dec(uint8_t num);
 };
 
-
+/**
+ * Instance of the GFRTCClass as declared in GFRTC.cpp
+ */
 extern GFRTCClass GFRTC;
 
 #endif

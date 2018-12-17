@@ -10,13 +10,22 @@ GFRTCClass	KEYWORD1
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+begin	KEYWORD2
 get	KEYWORD2
 set	KEYWORD2
 read	KEYWORD2
 write	KEYWORD2
-writeNVRAM	KEYWORD2
+readRegister	KEYWORD2
+writeRegister	KEYWORD2
 readNVRAM	KEYWORD2
-chipPresent	KEYWORD2
+writeNVRAM	KEYWORD2
+setAlarm	KEYWORD2
+setAlarmInterrupt	KEYWORD2
+getAlarmInterrupt	KEYWORD2
+setSquareWave	KEYWORD2
+getOscStoppedFlag	KEYWORD2
+getTemperature	KEYWORD2
+isPresent	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)

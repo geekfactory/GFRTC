@@ -30,26 +30,28 @@ GFRTCClass::GFRTCClass()
 
 bool GFRTCClass::begin(bool begini2c)
 {
-	// Request to initialize I2C?
+	_isPresent = false;
+	// request to initialize I2C?
 	if (begini2c) {
 		Wire.begin();
 	}
-	// check for presence
-	get();
 
-	return exists;
+	// check for presence by performing a read operation
+	readRegister(0x00);
+
+	return _isPresent;
 }
 
 timelib_t GFRTCClass::get()
 {
 	struct timelib_tm dt;
-	
+
 	// read information from RTC to structure
 	if (read(dt) == false) {
 		// return 0 if cannot communicate with RTC
 		return 0;
 	}
-	
+
 	// convert to timestamp
 	return time_make(&dt);
 }
@@ -57,10 +59,10 @@ timelib_t GFRTCClass::get()
 bool GFRTCClass::set(timelib_t t)
 {
 	struct timelib_tm dt;
-	
+
 	// get human readable time information (as required by RTC chip)
 	time_break(t, &dt);
-	
+
 	// enable CH bit for DS1307 chip
 	dt.tm_sec |= 0x80;
 	// write information on struct to hardware clock
@@ -78,20 +80,24 @@ bool GFRTCClass::set(timelib_t t)
 bool GFRTCClass::read(struct timelib_tm &dt)
 {
 	uint8_t sec;
+	_isPresent = false;
 
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
-	Wire.write((uint8_t) 0x00);
+	// reset register pointer to seconds reg
+	Wire.write((uint8_t) RTC_SECONDS);
 	if (Wire.endTransmission() != 0) {
-		exists = false;
 		return false;
 	}
-	exists = true;
-	
+
 	// request the 7 data fields secs, min, hr, dow, date, mth, yr
 	Wire.requestFrom(GFRTC_I2C_ADDRESS, 7);
-	if (Wire.available() < 7)
+	if (Wire.available() < 7) {
 		return false;
-	
+	}
+
+	// RTC responded as expected
+	_isPresent = true;
+
 	// read result and convert from BCD
 	sec = Wire.read();
 	dt.tm_sec = bcd2dec(sec & 0x7f);
@@ -101,18 +107,21 @@ bool GFRTCClass::read(struct timelib_tm &dt)
 	dt.tm_mday = bcd2dec(Wire.read());
 	dt.tm_mon = bcd2dec(Wire.read());
 	dt.tm_year = time_y2k2tm((bcd2dec(Wire.read())));
+
 	// If clock is halted, return false
-	if (sec & 0x80)
+	if (sec & 0x80) {
 		return false;
+	}
 	return true;
 }
 
 bool GFRTCClass::write(struct timelib_tm &dt)
 {
+	_isPresent = false;
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
-	// reset register pointer
-	Wire.write((uint8_t) 0x00);
-	// Write date / time information
+	// reset register pointer to seconds reg
+	Wire.write((uint8_t) RTC_SECONDS);
+	// write date / time information
 	Wire.write(dec2bcd(dt.tm_sec));
 	Wire.write(dec2bcd(dt.tm_min));
 	Wire.write(dec2bcd(dt.tm_hour));
@@ -121,60 +130,240 @@ bool GFRTCClass::write(struct timelib_tm &dt)
 	Wire.write(dec2bcd(dt.tm_mon));
 	Wire.write(dec2bcd(time_tm2y2k(dt.tm_year)));
 	if (Wire.endTransmission() != 0) {
-		exists = false;
 		return false;
 	}
-	exists = true;
+	// communication successful
+	_isPresent = true;
+	return true;
+}
+
+uint8_t GFRTCClass::readRegister(uint8_t addr, bool * result)
+{
+	uint8_t reg;
+
+	bool ret = readRegister(addr, &reg, sizeof(reg));
+
+	if (result != NULL)
+		* result = ret;
+
+	return reg;
+}
+
+bool GFRTCClass::readRegister(uint8_t addr, void * data, uint8_t size)
+{
+	uint8_t i;
+	uint8_t * dst = (uint8_t *) data;
+
+	// limitation of wire library
+	if (size > 32)
+		return false;
+
+	_isPresent = false;
+	// begin operation on I2C
+	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
+	Wire.write(addr);
+
+	// prepare to read
+	if (Wire.endTransmission() != 0) {
+		return false;
+	}
+
+	// begin read operation
+	Wire.requestFrom(GFRTC_I2C_ADDRESS, size);
+	if (Wire.available() < size) {
+		return false;
+	}
+	// Read data to buffer
+	for (i = 0; i < size; i++) {
+		dst[i] = Wire.read();
+	}
+
+	_isPresent = true;
+	return true;
+}
+
+bool GFRTCClass::writeRegister(uint8_t addr, uint8_t value)
+{
+	return writeRegister(addr, &value, sizeof(value));
+}
+
+bool GFRTCClass::writeRegister(uint8_t addr, const void * data, uint8_t size)
+{
+	uint8_t i;
+	uint8_t * src = (uint8_t *) data;
+
+	// limitation of wire library
+	if (size > 32)
+		return false;
+
+	_isPresent = false;
+	// begin operation on I2C
+	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
+	Wire.write(addr);
+
+	// write desired data
+	for (i = 0; i < size; i++) {
+		Wire.write(src[i]);
+	}
+
+	// check if communication was successful
+	if (Wire.endTransmission() != 0) {
+		return false;
+	} else {
+		_isPresent = true;
+		return true;
+	}
+}
+
+bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
+{
 	return true;
 }
 
 bool GFRTCClass::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
 {
-	uint16_t i;
-	const uint8_t * src = (uint8_t *) buffer;
-
-	// Limit operation to valid range
-	// Wire library cannot transfer more than 32 bytes at a time
-	if (size > 32 || address + size >= 64)
-		return false;
-
-	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
-	// Write start address for NVRAM
-	Wire.write((uint8_t) (0x08 + address));
-	// Write data
-	for (i = 0; i < size; i++) {
-		Wire.write(src[i]);
-	}
-	// Check if communication was successful
-	if (Wire.endTransmission() != 0)
-		return false;
 	return true;
 }
 
-bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
+bool GFRTCClass::setAlarm(gfrtc_alarm_types type, uint8_t hour, uint8_t minute, uint8_t second, uint8_t dow)
 {
-	uint16_t i;
-	uint8_t * dst = (uint8_t *) buffer;
+	uint8_t addr;
 
-	// Limit operation to valid range
-	// Wire library cannot transfer more than 32 bytes at a time
-	if (size > 32 || address + size >= 64)
-		return false;
+	second = dec2bcd(second);
+	minute = dec2bcd(minute);
+	hour = dec2bcd(hour);
+	dow = dec2bcd(dow);
 
-	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
-	// Add address offset for NVRAM start
-	Wire.write((uint8_t) (0x08 + address));
-	if (Wire.endTransmission() != 0)
+	if (type & 0x01) second |= 1 << A1M1;
+	if (type & 0x02) minute |= 1 << A1M2;
+	if (type & 0x04) hour |= 1 << A1M3;
+	if (type & 0x10) dow |= 1 << DYDT;
+	if (type & 0x08) dow |= 1 << A1M4;
+
+	if (!(type & 0x80)) // alarm 1
+	{
+		addr = ALM1_SECONDS;
+		if (!writeRegister(addr++, second)) {
+			return false;
+		}
+	} else {
+		addr = ALM2_MINUTES;
+	}
+	if (!writeRegister(addr++, minute) || !writeRegister(addr++, hour) || !writeRegister(addr++, dow)) {
 		return false;
-	// Begin read operation
-	Wire.requestFrom(GFRTC_I2C_ADDRESS, size);
-	if ((uint16_t) (Wire.available()) < size)
-		return false;
-	// Read data to buffer
-	for (i = 0; i < size; i++) {
-		dst[i] = Wire.read();
 	}
 	return true;
+}
+
+bool GFRTCClass::setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable)
+{
+	uint8_t regval, mask;
+	bool res;
+
+	// read control register value
+	regval = readRegister(RTC_CONTROL, & res);
+	if (!res) {
+		return false;
+	}
+
+	// prepare bitmask according to requested interrupt
+	switch (alarm) {
+	case E_ALARM_1:
+		mask = 1 << A1IE;
+		break;
+	case E_ALARM_2:
+		mask = 1 << A2IE;
+		break;
+	default:
+		return false;
+	}
+
+	// enable or disable interrupt bit
+	if (enable)
+		regval |= mask;
+	else
+		regval &= ~mask;
+
+	if (!writeRegister(RTC_CONTROL, regval))
+		return false;
+
+	return true;
+}
+
+bool GFRTCClass::getAlarmInterruptFlag(enum gfrtc_alarms alarm)
+{
+	uint8_t regval, mask;
+	bool res;
+
+	// read status register value
+	regval = readRegister(RTC_STATUS, &res);
+	if (!res) {
+		return false;
+	}
+
+	// prepare bitmask according to requested interrupt
+	switch (alarm) {
+	case E_ALARM_1:
+		mask = 1 << A1F;
+		break;
+	case E_ALARM_2:
+		mask = 1 << A2F;
+		break;
+	default:
+		return false;
+	}
+
+	// check for interrupt flag bits
+	if (regval & mask) {
+		regval &= ~mask;
+		writeRegister(RTC_STATUS, regval);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool GFRTCClass::setSquareWave(enum gfrtc_wave_frequencies frequency)
+{
+	uint8_t controlReg;
+
+	controlReg = readRegister(RTC_CONTROL);
+	if (freq >= SQWAVE_NONE) {
+		controlReg |= _BV(INTCN);
+	} else {
+		controlReg = (controlReg & 0xE3) | (freq << RS1);
+	}
+	writeRegister(RTC_CONTROL, controlReg);
+}
+
+bool GFRTCClass::getOscStoppedFlag(bool clearosf)
+{
+	// read status register
+	uint8_t s = readRegister(RTC_STATUS);
+	bool ret = s & (1 << OSF);
+	if (ret && clearosf) {
+		writeRegister(RTC_STATUS, s & ~(1 << OSF));
+	}
+	return ret;
+}
+
+int16_t GFRTCClass::getTemperature()
+{
+	// union to convert bytes to int
+
+	union int16_byte {
+		int16_t i;
+		byte b[2];
+	} rtcTemp;
+
+	rtcTemp.b[0] = readRegister(RTC_TEMP_LSB);
+	rtcTemp.b[1] = readRegister(RTC_TEMP_MSB);
+	return rtcTemp.i / 64;
+}
+
+bool GFRTCClass::isPresent()
+{
+	return _isPresent;
 }
 
 uint8_t GFRTCClass::dec2bcd(uint8_t num)
@@ -187,6 +376,9 @@ uint8_t GFRTCClass::bcd2dec(uint8_t num)
 	return((num / 16 * 10) + (num % 16));
 }
 
-bool GFRTCClass::exists = false;
+bool GFRTCClass::_isPresent = false;
 
-GFRTCClass GFRTC = GFRTCClass(); // create an instance for the user
+/**
+ * Create an instance for the user
+ */
+GFRTCClass GFRTC = GFRTCClass();

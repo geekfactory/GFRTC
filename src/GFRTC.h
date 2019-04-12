@@ -47,70 +47,74 @@
 /**
  * registers addresses
  */
-#define RTC_SECONDS 0x00
-#define RTC_MINUTES 0x01
-#define RTC_HOURS 0x02
-#define RTC_DAY 0x03
-#define RTC_DATE 0x04
-#define RTC_MONTH 0x05
-#define RTC_YEAR 0x06
-#define ALM1_SECONDS 0x07
-#define ALM1_MINUTES 0x08
-#define ALM1_HOURS 0x09
-#define ALM1_DAYDATE 0x0A
-#define ALM2_MINUTES 0x0B
-#define ALM2_HOURS 0x0C
-#define ALM2_DAYDATE 0x0D
-#define RTC_CONTROL 0x0E
-#define RTC_STATUS 0x0F
-#define RTC_AGING 0x10
-#define RTC_TEMP_MSB 0x11
-#define RTC_TEMP_LSB 0x12
+#define GFRTC_REG_SECONDS 0x00
+#define GFRTC_REG_MINUTES 0x01
+#define GFRTC_REG_HOURS 0x02
+#define GFRTC_REG_DAY 0x03
+#define GFRTC_REG_DATE 0x04
+#define GFRTC_REG_MONTH 0x05
+#define GFRTC_REG_YEAR 0x06
+#define GFRTC_REG_ALM1_SECONDS 0x07
+#define GFRTC_REG_ALM1_MINUTES 0x08
+#define GFRTC_REG_ALM1_HOURS 0x09
+#define GFRTC_REG_ALM1_DAYDATE 0x0A
+#define GFRTC_REG_ALM2_MINUTES 0x0B
+#define GFRTC_REG_ALM2_HOURS 0x0C
+#define GFRTC_REG_ALM2_DAYDATE 0x0D
+#define GFRTC_REG_CONTROL 0x0E
+#define	GFRTC_REG_STATUS 0x0F
+#define GFRTC_REG_AGING 0x10
+#define GFRTC_REG_MSB_TEMP 0x11
+#define GFRTC_REG_LSB_TEMP 0x12
+
+/**
+ * size for SRAM
+ */
 #define SRAM_START_ADDR 0x14
 #define SRAM_SIZE 236
 
 /**
  * alarm bits
  */
-#define A1M1 7
-#define A1M2 7
-#define A1M3 7
-#define A1M4 7
-#define A2M2 7
-#define A2M3 7
-#define A2M4 7
+#define GFRTC_BIT_A1M1 7
+#define GFRTC_BIT_A1M2 7
+#define GFRTC_BIT_A1M3 7
+#define GFRTC_BIT_A1M4 7
+#define GFRTC_BIT_A2M2 7
+#define GFRTC_BIT_A2M3 7
+#define GFRTC_BIT_A2M4 7
 
 /**
  * control register bits
  */
-#define EOSC 7
-#define BBSQW 6
-#define CONV 5
-#define RS2 4
-#define RS1 3
-#define INTCN 2
-#define A2IE 1
-#define A1IE 0
+#define GFRTC_BIT_EOSC 7
+#define GFRTC_BIT_BBSQW 6
+#define GFRTC_BIT_CONV 5
+#define GFRTC_BIT_RS2 4
+#define GFRTC_BIT_RS1 3
+#define GFRTC_BIT_INTCN 2
+#define GFRTC_BIT_A2IE 1
+#define GFRTC_BIT_A1IE 0
 
 /**
  * status register bits
  */
-#define OSF 7
-#define BB32KHZ 6
-#define CRATE1 5
-#define CRATE0 4
-#define EN32KHZ 3
-#define BSY 2
-#define A2F 1
-#define A1F 0
+#define GFRTC_BIT_OSF 7
+#define GFRTC_BIT_BB32KHZ 6
+#define GFRTC_BIT_CRATE1 5
+#define GFRTC_BIT_CRATE0 4
+#define GFRTC_BIT_EN32KHZ 3
+#define GFRTC_BIT_BSY 2
+#define GFRTC_BIT_A2F 1
+#define GFRTC_BIT_A1F 0
 
 /**
  * other bit definitions
  */
-#define DS1307_CH 7
-#define HR1224 6
-#define CENTURY 7
-#define DYDT 6
+#define GFRTC_BIT_DS1307_CH 7
+#define GFRTC_BIT_HR1224 6
+#define GFRTC_BIT_CENTURY 7
+#define GFRTC_BIT_DYDT 6
 
 /*-------------------------------------------------------------*
  *		Typedefs enums & structs			*
@@ -120,28 +124,28 @@
  * Defines the available types of alarms
  */
 enum gfrtc_alarm_types {
-	ALM1_EVERY_SECOND = 0x0F,
-	ALM1_MATCH_SECONDS = 0x0E,
-	ALM1_MATCH_MINUTES = 0x0C,
-	ALM1_MATCH_HOURS = 0x08,
-	ALM1_MATCH_DATE = 0x00,
-	ALM1_MATCH_DAY = 0x10,
-	ALM2_EVERY_MINUTE = 0x8E,
-	ALM2_MATCH_MINUTES = 0x8C,
-	ALM2_MATCH_HOURS = 0x88,
-	ALM2_MATCH_DATE = 0x80,
-	ALM2_MATCH_DAY = 0x90,
+	E_ALM1_EVERY_SECOND = 0x0F,
+	E_ALM1_MATCH_SECONDS = 0x0E,
+	E_ALM1_MATCH_MINUTES = 0x0C,
+	E_ALM1_MATCH_HOURS = 0x08,
+	E_ALM1_MATCH_DATE = 0x00,
+	E_ALM1_MATCH_DAY = 0x10,
+	E_ALM2_EVERY_MINUTE = 0x8E,
+	E_ALM2_MATCH_MINUTES = 0x8C,
+	E_ALM2_MATCH_HOURS = 0x88,
+	E_ALM2_MATCH_DATE = 0x80,
+	E_ALM2_MATCH_DAY = 0x90,
 };
 
 /**
  * Square wave output selection
  */
-enum gfrtc_wave_frequencies {
-	SQWAVE_1_HZ,
-	SQWAVE_1024_HZ,
-	SQWAVE_4096_HZ,
-	SQWAVE_8192_HZ,
-	SQWAVE_NONE
+enum gfrtc_intsqw_modes {
+	E_SQRWAVE_1_HZ = 0,
+	E_SQRWAVE_1024_HZ,
+	E_SQRWAVE_4096_HZ,
+	E_SQRWAVE_8192_HZ,
+	E_INTERRUPT_OUTPUT,
 };
 
 /**
@@ -332,7 +336,7 @@ public:
 	 * 
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
-	static bool setSquareWave(enum gfrtc_wave_frequencies frequency);
+	static bool setIntSqwMode(enum gfrtc_intsqw_modes frequency);
 
 	/**
 	 * Reads the flag that indicates that the oscillator failed. If this flag is 
@@ -345,7 +349,7 @@ public:
 	 * @return Returns true if oscillator stopped at some time, false if oscillator
 	 * operation is normal.
 	 */
-	static bool getOscStoppedFlag(bool clearosf = false);
+	static bool getOscillatorStopFlag(bool clearosf = false);
 
 	/**
 	 * Reads the RTC´s internal temperature sensor.

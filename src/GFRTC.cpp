@@ -24,7 +24,8 @@
  *-------------------------------------------------------------*/
 GFRTCClass::GFRTCClass()
 {
-	// Prepare I2C (moved this call out of the constructor) as it causes problems in some architectures
+	// Prepare I2C (moved this call out of the constructor) as it causes
+	// problems in some architectures
 	//Wire.begin();
 }
 
@@ -53,7 +54,7 @@ timelib_t GFRTCClass::get()
 	}
 
 	// convert to timestamp
-	return time_make(&dt);
+	return timelib_make(&dt);
 }
 
 bool GFRTCClass::set(timelib_t t)
@@ -61,7 +62,7 @@ bool GFRTCClass::set(timelib_t t)
 	struct timelib_tm dt;
 
 	// get human readable time information (as required by RTC chip)
-	time_break(t, &dt);
+	timelib_break(t, &dt);
 
 	// enable CH bit for DS1307 chip
 	dt.tm_sec |= 0x80;
@@ -82,9 +83,11 @@ bool GFRTCClass::read(struct timelib_tm &dt)
 	uint8_t sec;
 	_isPresent = false;
 
+	// begin i2c communication
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
 	// reset register pointer to seconds reg
-	Wire.write((uint8_t) RTC_SECONDS);
+	Wire.write((uint8_t) GFRTC_REG_SECONDS);
+	// test communication result
 	if (Wire.endTransmission() != 0) {
 		return false;
 	}
@@ -106,7 +109,7 @@ bool GFRTCClass::read(struct timelib_tm &dt)
 	dt.tm_wday = bcd2dec(Wire.read());
 	dt.tm_mday = bcd2dec(Wire.read());
 	dt.tm_mon = bcd2dec(Wire.read());
-	dt.tm_year = time_y2k2tm((bcd2dec(Wire.read())));
+	dt.tm_year = timelib_y2k2tm((bcd2dec(Wire.read())));
 
 	// If clock is halted, return false
 	if (sec & 0x80) {
@@ -119,8 +122,10 @@ bool GFRTCClass::write(struct timelib_tm &dt)
 {
 	_isPresent = false;
 	Wire.beginTransmission(GFRTC_I2C_ADDRESS);
+
 	// reset register pointer to seconds reg
-	Wire.write((uint8_t) RTC_SECONDS);
+	Wire.write((uint8_t) GFRTC_REG_SECONDS);
+
 	// write date / time information
 	Wire.write(dec2bcd(dt.tm_sec));
 	Wire.write(dec2bcd(dt.tm_min));
@@ -128,10 +133,13 @@ bool GFRTCClass::write(struct timelib_tm &dt)
 	Wire.write(dec2bcd(dt.tm_wday));
 	Wire.write(dec2bcd(dt.tm_mday));
 	Wire.write(dec2bcd(dt.tm_mon));
-	Wire.write(dec2bcd(time_tm2y2k(dt.tm_year)));
+	Wire.write(dec2bcd(timelib_tm2y2k(dt.tm_year)));
+
+	// perform i2c operation
 	if (Wire.endTransmission() != 0) {
 		return false;
 	}
+
 	// communication successful
 	_isPresent = true;
 	return true;
@@ -141,11 +149,14 @@ uint8_t GFRTCClass::readRegister(uint8_t addr, bool * result)
 {
 	uint8_t reg;
 
+	// read register value
 	bool ret = readRegister(addr, &reg, sizeof(reg));
 
+	// write result if valid pointer is provided
 	if (result != NULL)
 		* result = ret;
 
+	// return value
 	return reg;
 }
 
@@ -234,20 +245,20 @@ bool GFRTCClass::setAlarm(gfrtc_alarm_types type, uint8_t hour, uint8_t minute, 
 	hour = dec2bcd(hour);
 	dow = dec2bcd(dow);
 
-	if (type & 0x01) second |= 1 << A1M1;
-	if (type & 0x02) minute |= 1 << A1M2;
-	if (type & 0x04) hour |= 1 << A1M3;
-	if (type & 0x10) dow |= 1 << DYDT;
-	if (type & 0x08) dow |= 1 << A1M4;
+	if (type & 0x01) second |= 1 << GFRTC_BIT_A1M1;
+	if (type & 0x02) minute |= 1 << GFRTC_BIT_A1M2;
+	if (type & 0x04) hour |= 1 << GFRTC_BIT_A1M3;
+	if (type & 0x10) dow |= 1 << GFRTC_BIT_DYDT;
+	if (type & 0x08) dow |= 1 << GFRTC_BIT_A1M4;
 
 	if (!(type & 0x80)) // alarm 1
 	{
-		addr = ALM1_SECONDS;
+		addr = GFRTC_REG_ALM1_SECONDS;
 		if (!writeRegister(addr++, second)) {
 			return false;
 		}
 	} else {
-		addr = ALM2_MINUTES;
+		addr = GFRTC_REG_ALM2_MINUTES;
 	}
 	if (!writeRegister(addr++, minute) || !writeRegister(addr++, hour) || !writeRegister(addr++, dow)) {
 		return false;
@@ -261,7 +272,7 @@ bool GFRTCClass::setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable)
 	bool res;
 
 	// read control register value
-	regval = readRegister(RTC_CONTROL, & res);
+	regval = readRegister(GFRTC_REG_CONTROL, & res);
 	if (!res) {
 		return false;
 	}
@@ -269,22 +280,23 @@ bool GFRTCClass::setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable)
 	// prepare bitmask according to requested interrupt
 	switch (alarm) {
 	case E_ALARM_1:
-		mask = 1 << A1IE;
+		mask = 1 << GFRTC_BIT_A1IE;
 		break;
 	case E_ALARM_2:
-		mask = 1 << A2IE;
+		mask = 1 << GFRTC_BIT_A2IE;
 		break;
 	default:
 		return false;
 	}
 
 	// enable or disable interrupt bit
-	if (enable)
+	if (enable) {
 		regval |= mask;
-	else
+	} else {
 		regval &= ~mask;
+	}
 
-	if (!writeRegister(RTC_CONTROL, regval))
+	if (!writeRegister(GFRTC_REG_CONTROL, regval))
 		return false;
 
 	return true;
@@ -293,21 +305,17 @@ bool GFRTCClass::setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable)
 bool GFRTCClass::getAlarmInterruptFlag(enum gfrtc_alarms alarm)
 {
 	uint8_t regval, mask;
-	bool res;
 
 	// read status register value
-	regval = readRegister(RTC_STATUS, &res);
-	if (!res) {
-		return false;
-	}
+	regval = readRegister(GFRTC_REG_STATUS);
 
 	// prepare bitmask according to requested interrupt
 	switch (alarm) {
 	case E_ALARM_1:
-		mask = 1 << A1F;
+		mask = 1 << GFRTC_BIT_A1F;
 		break;
 	case E_ALARM_2:
-		mask = 1 << A2F;
+		mask = 1 << GFRTC_BIT_A2F;
 		break;
 	default:
 		return false;
@@ -315,50 +323,68 @@ bool GFRTCClass::getAlarmInterruptFlag(enum gfrtc_alarms alarm)
 
 	// check for interrupt flag bits
 	if (regval & mask) {
+		// clear flag
 		regval &= ~mask;
-		writeRegister(RTC_STATUS, regval);
+		writeRegister(GFRTC_REG_STATUS, regval);
 		return true;
 	} else {
 		return false;
 	}
 }
 
-bool GFRTCClass::setSquareWave(enum gfrtc_wave_frequencies frequency)
+bool GFRTCClass::setIntSqwMode(enum gfrtc_intsqw_modes frequency)
 {
 	uint8_t controlReg;
+	bool res;
 
-	controlReg = readRegister(RTC_CONTROL);
-	if (freq >= SQWAVE_NONE) {
-		controlReg |= _BV(INTCN);
+	//first read current value
+	controlReg = readRegister(GFRTC_REG_CONTROL, &res);
+	if (!res)
+		return false;
+
+	// modify register
+	if (frequency >= E_INTERRUPT_OUTPUT) {
+		controlReg |= 1 << GFRTC_BIT_INTCN;
 	} else {
-		controlReg = (controlReg & 0xE3) | (freq << RS1);
+		controlReg = (controlReg & 0xE3) | (frequency << GFRTC_BIT_RS1);
 	}
-	writeRegister(RTC_CONTROL, controlReg);
+
+	// write to IC
+	return writeRegister(GFRTC_REG_CONTROL, controlReg);
+
 }
 
-bool GFRTCClass::getOscStoppedFlag(bool clearosf)
+bool GFRTCClass::getOscillatorStopFlag(bool clearosf)
 {
 	// read status register
-	uint8_t s = readRegister(RTC_STATUS);
-	bool ret = s & (1 << OSF);
+	uint8_t s = readRegister(GFRTC_REG_STATUS);
+
+	// extract flag value
+	bool ret = (s & (1 << GFRTC_BIT_OSF)) ? true : false;
+
+	// clear if needed
 	if (ret && clearosf) {
-		writeRegister(RTC_STATUS, s & ~(1 << OSF));
+		writeRegister(GFRTC_REG_STATUS, s & ~(1 << GFRTC_BIT_OSF));
 	}
+
+	// return OSF flag status
 	return ret;
 }
 
 int16_t GFRTCClass::getTemperature()
 {
 	// union to convert bytes to int
-
 	union int16_byte {
 		int16_t i;
 		byte b[2];
-	} rtcTemp;
+	} rtctemp;
 
-	rtcTemp.b[0] = readRegister(RTC_TEMP_LSB);
-	rtcTemp.b[1] = readRegister(RTC_TEMP_MSB);
-	return rtcTemp.i / 64;
+	// read data from registers
+	rtctemp.b[0] = readRegister(GFRTC_REG_LSB_TEMP);
+	rtctemp.b[1] = readRegister(GFRTC_REG_MSB_TEMP);
+
+	// convert to integer as celsius degrees, discards fractional part
+	return rtctemp.i / 64;
 }
 
 bool GFRTCClass::isPresent()

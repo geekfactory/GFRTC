@@ -226,16 +226,6 @@ bool GFRTCClass::writeRegister(uint8_t addr, const void * data, uint8_t size)
 	}
 }
 
-bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
-{
-	return true;
-}
-
-bool GFRTCClass::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
-{
-	return true;
-}
-
 bool GFRTCClass::setAlarm(gfrtc_alarm_types type, uint8_t hour, uint8_t minute, uint8_t second, uint8_t dow)
 {
 	uint8_t addr;
@@ -302,6 +292,27 @@ bool GFRTCClass::setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable)
 	return true;
 }
 
+bool GFRTCClass::setIntSqwMode(enum gfrtc_intsqw_modes frequency)
+{
+	uint8_t controlReg;
+	bool res;
+
+	//first read current value
+	controlReg = readRegister(GFRTC_REG_CONTROL, &res);
+	if (!res)
+		return false;
+
+	// modify register
+	if (frequency >= E_INTERRUPT_OUTPUT) {
+		controlReg |= 1 << GFRTC_BIT_INTCN;
+	} else {
+		controlReg = (controlReg & 0xE3) | (frequency << GFRTC_BIT_RS1);
+	}
+
+	// write to IC
+	return writeRegister(GFRTC_REG_CONTROL, controlReg);
+}
+
 bool GFRTCClass::getAlarmInterruptFlag(enum gfrtc_alarms alarm)
 {
 	uint8_t regval, mask;
@@ -330,28 +341,6 @@ bool GFRTCClass::getAlarmInterruptFlag(enum gfrtc_alarms alarm)
 	} else {
 		return false;
 	}
-}
-
-bool GFRTCClass::setIntSqwMode(enum gfrtc_intsqw_modes frequency)
-{
-	uint8_t controlReg;
-	bool res;
-
-	//first read current value
-	controlReg = readRegister(GFRTC_REG_CONTROL, &res);
-	if (!res)
-		return false;
-
-	// modify register
-	if (frequency >= E_INTERRUPT_OUTPUT) {
-		controlReg |= 1 << GFRTC_BIT_INTCN;
-	} else {
-		controlReg = (controlReg & 0xE3) | (frequency << GFRTC_BIT_RS1);
-	}
-
-	// write to IC
-	return writeRegister(GFRTC_REG_CONTROL, controlReg);
-
 }
 
 bool GFRTCClass::getOscillatorStopFlag(bool clearosf)
@@ -387,10 +376,24 @@ int16_t GFRTCClass::getTemperature()
 	return rtctemp.i / 64;
 }
 
+bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
+{
+	return true;
+}
+
+bool GFRTCClass::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
+{
+	return true;
+}
+
 bool GFRTCClass::isPresent()
 {
 	return _isPresent;
 }
+
+/*-------------------------------------------------------------*
+ *		Private members					*
+ *-------------------------------------------------------------*/
 
 uint8_t GFRTCClass::dec2bcd(uint8_t num)
 {

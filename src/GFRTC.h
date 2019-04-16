@@ -272,30 +272,6 @@ public:
 	static bool writeRegister(uint8_t addr, const void * data, uint8_t size);
 
 	/**
-	 * Reads from general purpose NVRAM on the RTC chip. This only works on RTC chips
-	 * that have built-in NVRAM.
-	 *
-	 * @param address The address to read from.
-	 * @param buffer Pointer where data from NVRAM should be stored.
-	 * @param size Size of the data to transfer.
-	 *
-	 * @return Returns true if communication is successfull, false otherwise.
-	 */
-	static bool readNVRAM(uint16_t address, void * buffer, uint16_t size);
-
-	/**
-	 * Writes general purpose NVRAM on the RTC chip. This only works on RTC chips
-	 * that have built-in NVRAM.
-	 *
-	 * @param address The address to write to.
-	 * @param buffer Pointer to buffer containing data to write on NVRAM.
-	 * @param size Size of the data to transfer.
-	 *
-	 * @return Returns true if communication is successfull, false otherwise.
-	 */
-	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
-
-	/**
 	 * Configures an alarm on the RTC, this method writes to the Alarm 1 or Alarm 2
 	 * registers according to the type paramter.
 	 * 
@@ -320,6 +296,15 @@ public:
 	static bool setAlarmInterrupt(enum gfrtc_alarms alarm, bool enable);
 
 	/**
+	 * Enables the square wave output on the RTC.
+	 * 
+	 * @param frequency The operating frequency of the square wave output.
+	 * 
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool setIntSqwMode(enum gfrtc_intsqw_modes frequency);
+
+	/**
 	 * Determines the alarm that generated an interrupt.
 	 * 
 	 * This method can also be used to poll the interrupt flags even if no interrupt
@@ -328,15 +313,6 @@ public:
 	 * @return The number of the alarm that requested an interrupt.
 	 */
 	static bool getAlarmInterruptFlag(enum gfrtc_alarms alarm);
-
-	/**
-	 * Enables the square wave output on the RTC.
-	 * 
-	 * @param frequency The operating frequency of the square wave output.
-	 * 
-	 * @return Returns true if communication is successfull, false otherwise.
-	 */
-	static bool setIntSqwMode(enum gfrtc_intsqw_modes frequency);
 
 	/**
 	 * Reads the flag that indicates that the oscillator failed. If this flag is 
@@ -357,6 +333,30 @@ public:
 	 * @return The temperature measured by internal temperature sensor.
 	 */
 	static int16_t getTemperature();
+
+	/**
+	 * Reads from general purpose NVRAM on the RTC chip. This only works on RTC chips
+	 * that have built-in NVRAM.
+	 *
+	 * @param address The address to read from.
+	 * @param buffer Pointer where data from NVRAM should be stored.
+	 * @param size Size of the data to transfer.
+	 *
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool readNVRAM(uint16_t address, void * buffer, uint16_t size);
+
+	/**
+	 * Writes general purpose NVRAM on the RTC chip. This only works on RTC chips
+	 * that have built-in NVRAM.
+	 *
+	 * @param address The address to write to.
+	 * @param buffer Pointer to buffer containing data to write on NVRAM.
+	 * @param size Size of the data to transfer.
+	 *
+	 * @return Returns true if communication is successfull, false otherwise.
+	 */
+	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
 
 	/**
 	 * Checks if the library is able to talk to the RTC chip over the I2C bus.

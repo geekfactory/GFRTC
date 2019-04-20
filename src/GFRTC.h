@@ -270,6 +270,28 @@ public:
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
 	static bool writeRegister(uint8_t addr, const void * data, uint8_t size);
+	
+	/**
+	 * Reads the status of a bit on an specific register.
+	 * 
+         * @param addr The address of the register.
+         * @param bit The bit number to set or clear.
+         * @param result Optional pointer to buffer to store the result of the operation.
+	 * 
+         * @return The status of the requested bit.
+         */
+	bool readBit(uint8_t addr, uint8_t bit, bool * result = NULL);
+	
+	/**
+	 * Sets or clears a bit on the indicated register.
+	 * 
+         * @param addr The address of the register.
+         * @param bit The bit number to set or clear.
+         * @param value The value to write on the selected bit.
+	 * 
+         * @return Returns true if communication is successfull, false otherwise.
+         */
+	bool writeBit(uint8_t addr, uint8_t bit, bool value);
 
 	/**
 	 * Configures an alarm on the RTC, this method writes to the Alarm 1 or Alarm 2
@@ -344,7 +366,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
-	static bool readNVRAM(uint16_t address, void * buffer, uint16_t size);
+	static bool readNVRAM(uint8_t address, void * buffer, uint16_t size);
 
 	/**
 	 * Writes general purpose NVRAM on the RTC chip. This only works on RTC chips
@@ -356,7 +378,7 @@ public:
 	 *
 	 * @return Returns true if communication is successfull, false otherwise.
 	 */
-	static bool writeNVRAM(uint16_t address, const void * buffer, uint16_t size);
+	static bool writeNVRAM(uint8_t address, const void * buffer, uint16_t size);
 
 	/**
 	 * Checks if the library is able to talk to the RTC chip over the I2C bus.

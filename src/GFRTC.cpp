@@ -24,9 +24,9 @@
  *-------------------------------------------------------------*/
 GFRTCClass::GFRTCClass()
 {
-	// Prepare I2C (moved this call out of the constructor) as it causes
+	// Prepare I2C: moved this call out of the constructor as it causes
 	// problems in some architectures
-	//Wire.begin();
+	// Wire.begin();
 }
 
 bool GFRTCClass::begin(bool begini2c)
@@ -180,7 +180,7 @@ bool GFRTCClass::readRegister(uint8_t addr, void * data, uint8_t size)
 	}
 
 	// begin read operation
-	Wire.requestFrom(GFRTC_I2C_ADDRESS, size);
+	Wire.requestFrom((uint8_t)GFRTC_I2C_ADDRESS, size);
 	if (Wire.available() < size) {
 		return false;
 	}
@@ -224,6 +224,45 @@ bool GFRTCClass::writeRegister(uint8_t addr, const void * data, uint8_t size)
 		_isPresent = true;
 		return true;
 	}
+}
+
+bool GFRTCClass::readBit(uint8_t addr, uint8_t bit, bool * result)
+{
+	uint8_t regval;
+	bool ret = false;
+	
+	// read current register value
+	regval = readRegister(addr, result);
+	if (* result) {
+		ret = (regval & (1 << bit)) ? true : false;
+	}
+	// return bit value
+	return ret;
+}
+
+bool GFRTCClass::writeBit(uint8_t addr, uint8_t bit, bool value)
+{
+	uint8_t regval, bitmask;
+	bool res;
+
+	// read current register value
+	regval = readRegister(addr, &res);
+	if (!res) {
+		return false;
+	}
+	// create bitmask
+	bitmask = (1 << bit);
+	// enable or disable bit
+	if (value) {
+		regval |= bitmask;
+	} else {
+		regval &= ~bitmask;
+	}
+	// write back to register
+	if (!writeRegister(addr, regval))
+		return false;
+	// operation successfull
+	return true;
 }
 
 bool GFRTCClass::setAlarm(gfrtc_alarm_types type, uint8_t hour, uint8_t minute, uint8_t second, uint8_t dow)
@@ -308,6 +347,8 @@ bool GFRTCClass::setIntSqwMode(enum gfrtc_intsqw_modes frequency)
 	} else {
 		controlReg = (controlReg & 0xE3) | (frequency << GFRTC_BIT_RS1);
 	}
+	
+	Serial.println(controlReg, HEX);
 
 	// write to IC
 	return writeRegister(GFRTC_REG_CONTROL, controlReg);
@@ -362,28 +403,24 @@ bool GFRTCClass::getOscillatorStopFlag(bool clearosf)
 
 int16_t GFRTCClass::getTemperature()
 {
-	// union to convert bytes to int
-	union int16_byte {
-		int16_t i;
-		byte b[2];
-	} rtctemp;
-
+	int16_t rtctemp = 0;
 	// read data from registers
-	rtctemp.b[0] = readRegister(GFRTC_REG_LSB_TEMP);
-	rtctemp.b[1] = readRegister(GFRTC_REG_MSB_TEMP);
+	
+	rtctemp = (readRegister(GFRTC_REG_MSB_TEMP) << 8);
+	rtctemp |= (readRegister(GFRTC_REG_LSB_TEMP));
 
 	// convert to integer as celsius degrees, discards fractional part
-	return rtctemp.i / 64;
+	return (rtctemp / 256);
 }
 
-bool GFRTCClass::readNVRAM(uint16_t address, void * buffer, uint16_t size)
+bool GFRTCClass::readNVRAM(uint8_t address, void * buffer, uint16_t size)
 {
-	return true;
+	return readRegister((uint8_t)address, buffer, size);
 }
 
-bool GFRTCClass::writeNVRAM(uint16_t address, const void * buffer, uint16_t size)
+bool GFRTCClass::writeNVRAM(uint8_t address, const void * buffer, uint16_t size)
 {
-	return true;
+	return writeRegister((uint8_t)address, buffer, size);
 }
 
 bool GFRTCClass::isPresent()

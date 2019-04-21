@@ -33,7 +33,7 @@
 /**
  * Version string, should be changed in every release
  */
-#define GFRTC_VERSION_STRING	"2.0.0"
+#define GFRTC_VERSION_STRING	"3.0.0"
 
 /*-------------------------------------------------------------*
  *		Macros and definitions				*

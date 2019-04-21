@@ -280,7 +280,7 @@ public:
 	 * 
          * @return The status of the requested bit.
          */
-	bool readBit(uint8_t addr, uint8_t bit, bool * result = NULL);
+	static bool readBit(uint8_t addr, uint8_t bit, bool * result = NULL);
 	
 	/**
 	 * Sets or clears a bit on the indicated register.
@@ -291,7 +291,7 @@ public:
 	 * 
          * @return Returns true if communication is successfull, false otherwise.
          */
-	bool writeBit(uint8_t addr, uint8_t bit, bool value);
+	static bool writeBit(uint8_t addr, uint8_t bit, bool value);
 
 	/**
 	 * Configures an alarm on the RTC, this method writes to the Alarm 1 or Alarm 2

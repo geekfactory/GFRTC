@@ -4,7 +4,7 @@
    www.geekfactory.mx
 
    Basic example for GFRTC, this example shows how to read date/time from RTC
-   and display it on the Arduino serial monitor.
+   and display it on the serial terminal.
 */
 #include <GFRTC.h>
 
@@ -29,16 +29,35 @@ void setup() {
     Serial.println(F("Check RTC connections and try again."));
     for (;;);
   }
+
+  // Setting the time using unix timestamp
+  Serial.println(F("Setting time to Wednesday, 01/Jan/20 14:10:30 (1577887830)"));
+  GFRTC.set(1577887830);
 }
 
 void loop() {
+  // read unix time
+  timelib_t ut = GFRTC.get();
+
+  // print unix time and then human readable time
+  Serial.print(ut);
+  Serial.print(F(" unix equals "));
+  readAndDisplayTime();
+
+  // wait a second before reading again
+  delay(1000);
+}
+
+/**
+   Prints date and time to serial monitor
+*/
+void readAndDisplayTime() {
   // structure to hold data from RTC
   struct timelib_tm datetime;
 
   // get date and time
   if (GFRTC.read(datetime)) {
     // read ok, print data from RTC
-    Serial.print(F("OK, Time = "));
     print2digits(datetime.tm_hour);
     Serial.write(':');
     print2digits(datetime.tm_min);
@@ -55,9 +74,6 @@ void loop() {
     // error reading the RTC
     Serial.println(F("Cannot read RTC."));
   }
-
-  // wait a second before reading again
-  delay(1000);
 }
 
 /**

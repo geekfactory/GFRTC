@@ -1,108 +1,82 @@
 /**
- * GeekFactory - "Construye tu propia tecnologia"
- * Distribucion de materiales para el desarrollo e innovacion tecnologica
- * www.geekfactory.mx
- *
- * Ejemplo para ajustar la fecha y hora del modulo RTC con la hora del compilador.
- * Requiere el reloj en tiempo real (RTC) DS1307 conectado en el bus I2C.
- * Requiere la instalacion de nuestra libreria TimeLib con funciones de tiempo.
- */
+   GeekFactory - "INNOVATING TOGETHER"
+   Distribucion de materiales para el desarrollo e innovacion tecnologica
+   www.geekfactory.mx
 
-#include <Wire.h>
-#include <TimeLib.h>
-#include <RTCLib.h>
+   Basic example for GFRTC, this example shows how to write date/time to RTC
+   using a timelib_tm structure and display it on the serial terminal.
 
-const char *monthName[12] = {
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-};
-
-// Declaramos una estructura "tm" llamada datetime para almacenar 
-// La fecha y la hora actual obtenida desde el chip RTC.
-struct tm datetime;
+   The time and date is always set to the same value provided during compilation.
+*/
+#include <GFRTC.h>
 
 void setup() {
-  // Preparamos la comunicacion serial  
-  Serial.begin(9600);
+  // prepare serial interface
+  Serial.begin(115200);
   while (!Serial);
-  delay(200);
 
-  bool parse=false;
-  bool config=false;
+  // show message on serial monitor
+  Serial.println(F("----------------------------------------------------"));
+  Serial.println(F("             GFRTC LIBRARY TEST PROGRAM             "));
+  Serial.println(F("             https://www.geekfactory.mx             "));
+  Serial.println(F("----------------------------------------------------"));
 
-  // Obtener la fecha y la hora en la que se ejecuta el compilador
-  // Y convertirla al formato de la estructura tm para poderla manipular
-  if (getDate(__DATE__) && getTime(__TIME__)) {
-    parse = true;
-    // Escribir los datos al reloj en tiempo real
-    if (RTC.write(datetime)) {
-      config = true;
-    }
+  // prepare the RTC class, this also calls Wire.begin()
+  GFRTC.begin(true);
+
+  // check if we can communicate with RTC
+  if (GFRTC.isPresent()) {
+    Serial.println(F("RTC connected and ready."));
+  } else {
+    Serial.println(F("Check RTC connections and try again."));
+    for (;;);
   }
 
-  if (parse && config) {
-    // Se obtuvo el tiempo del compilador y se configuro correctamente
-    Serial.print("DS1307 Time=");
-    Serial.print(__TIME__);
-    Serial.print(", Date=");
-    Serial.println(__DATE__);
-  }
-  else if (parse) {
-    // Error al comunicarse con el DS1307, revisar conexiones
-    Serial.println("DS1307 error");
-    Serial.println("Check circuit.");
-  }
-  else {
-    // No se puede interpretar la fecha del compilador
-    Serial.print("Cannot obtain compiler date & time");
-    Serial.print("Time=\"");
-    Serial.print(__TIME__);
-    Serial.print("\", Date=\"");
-    Serial.print(__DATE__);
-    Serial.println("\"");
+  // structure to hold data from RTC
+  struct timelib_tm datetime;
+
+  // use the datetime structure to group date time information
+  // SET THE DESIRED TIME / DATE HERE
+  datetime.tm_hour = 12;
+  datetime.tm_min = 0;
+  datetime.tm_sec = 0;
+  datetime.tm_wday = 7;
+  datetime.tm_mday = 20;
+  datetime.tm_mon = 4;
+  datetime.tm_year = timelib_y2k2tm(19);
+
+  // write data on struct to RTC registers
+  if (GFRTC.write(datetime)) {
+    // write ok, print data sent to RTC
+    Serial.print(F("Set date / time to: "));
+    print2digits(datetime.tm_hour);
+    Serial.write(':');
+    print2digits(datetime.tm_min);
+    Serial.write(':');
+    print2digits(datetime.tm_sec);
+    Serial.print(F(", Date (D/M/Y) = "));
+    Serial.print(datetime.tm_mday);
+    Serial.write('/');
+    Serial.print(datetime.tm_mon);
+    Serial.write('/');
+    Serial.print(timelib_tm2y2k(datetime.tm_year));
+    Serial.println();
+  } else {
+    // error reading the RTC
+    Serial.println(F("Cannot write RTC."));
   }
 }
 
 void loop() {
-  // No hacemos nada en el loop principal
+  // do nothing on main loop
 }
 
 /**
- * Obtiene el tiempo desde la cadena de hora suministrada por el compilador
- * y la almacena en la estructura datetime.
- */
-bool getTime(const char *str)
-{
-  int hour, minute, second;
-
-  if (sscanf(str, "%d:%d:%d", &hour, &minute, &second) != 3) return false;
-  datetime.tm_hour = hour;
-  datetime.tm_min = minute;
-  datetime.tm_sec = second;
-  return true;
-}
-
-/**
- * Obtiene la fecha desde la cadena de fecha suministrada por el compilador
- * y la almacena en la estructura datetime.
- */
-bool getDate(const char *str)
-{
-  char month[12];
-  int day, year;
-
-  uint8_t monthIndex;
-
-  if (sscanf(str, "%s %d %d", month, &day, &year) != 3) return false;
-  for (monthIndex = 0; monthIndex < 12; monthIndex++) {
-    if (strcmp(month, monthName[monthIndex]) == 0) break;
+   Helper function to print always two digits
+*/
+void print2digits(int number) {
+  if (number >= 0 && number < 10) {
+    Serial.write('0');
   }
-  if (monthIndex >= 12) return false;
-  datetime.tm_mday = day;
-  datetime.tm_mon = monthIndex + 1;
-  datetime.tm_year = time_calendar2tm(year);
-  return true;
+  Serial.print(number);
 }
-
-
-

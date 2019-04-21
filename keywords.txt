@@ -17,14 +17,16 @@ read	KEYWORD2
 write	KEYWORD2
 readRegister	KEYWORD2
 writeRegister	KEYWORD2
-readNVRAM	KEYWORD2
-writeNVRAM	KEYWORD2
+readBit	KEYWORD2
+writeBit	KEYWORD2
 setAlarm	KEYWORD2
 setAlarmInterrupt	KEYWORD2
-getAlarmInterruptFlag	KEYWORD2
 setIntSqwMode	KEYWORD2
+getAlarmInterruptFlag	KEYWORD2
 getOscillatorStopFlag	KEYWORD2
 getTemperature	KEYWORD2
+readNVRAM	KEYWORD2
+writeNVRAM	KEYWORD2
 isPresent	KEYWORD2
 
 #######################################

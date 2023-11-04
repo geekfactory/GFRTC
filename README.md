@@ -22,7 +22,7 @@ Just include the library header file. The library **automatically creates an ins
 #include <GFRTC.h>
 ```
 
-In setup function call GFRTC.begin(true); This calls Wire.begin() to prepare the I2C interface if it is now done elsewhere.
+In setup function call GFRTC.begin(true); This calls Wire.begin() (when the parameter pased to the funcion is set to true) to prepare the I2C interface if it is not done elsewhere.
 
 ```cpp
 GFRTC.begin(true);
@@ -37,6 +37,14 @@ struct timelib_tm datetime;
 // get date and time
 if (GFRTC.read(datetime)) {
     // do something with date and time information now in struct
+}
+
+if (GFRTC.write(datetime)) {
+    // write ok, print data sent to RTC
+    Serial.print(F("Set date / time ok"));
+} else {
+    // error reading the RTC
+  Serial.println(F("Cannot write RTC."));
 }
 ```
 
